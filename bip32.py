@@ -28,6 +28,23 @@ class Bip32:
                         digestmod=hashlib.sha512).digest()
         return ExtKey(self.network, b"\x00", b"\x00\x00\x00\x00", b"\x00\x00\x00\x00", I64[32:], I64[:32], True, False)
 
+    def derive_from_path(self, path):
+        indexes = path.split("/")
+        for index in indexes:
+            print(index)
+            if index == "m":
+                extkey = self.gen_masterpriv()
+                continue
+
+            if index[-1] == "H":
+                is_hardened = True
+                index = index[:-1]
+
+            childindex = int(index, 10)
+            extkey = extkey.derive_priv(childindex, is_hardened)
+
+        return extkey.serialize()
+
 
 class ExtKey:
     def __init__(self, network: str, depth: bytes, fingerprint: bytes, childnumber: bytes, chaincode: bytes, keydata: bytes, is_private: bool, is_hardened: bool):
@@ -137,5 +154,4 @@ class ExtKey:
 if __name__ == '__main__':
     seed = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
     bip32 = Bip32(seed)
-    extkey = bip32.gen_masterpriv().derive_pub(0, True)
-    print(extkey.serialize())
+    print(bip32.derive_from_path("m/0H"))
