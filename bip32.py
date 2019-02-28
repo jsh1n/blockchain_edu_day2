@@ -2,7 +2,8 @@ import hashlib
 import hmac
 import random
 import base58
-from secp256k1 import PrivateKey, PublicKey
+from secp256k1 import PrivateKey
+import sys
 
 
 class Bip32:
@@ -28,11 +29,10 @@ class Bip32:
                         digestmod=hashlib.sha512).digest()
         return ExtKey(self.network, b"\x00", b"\x00\x00\x00\x00", b"\x00\x00\x00\x00", I64[32:], I64[:32], True, False)
 
-    def derive_from_path(self, path):
+    def derive_from_path(self, path, is_private=True):
         indexes = path.split("/")
         for index in indexes:
             is_hardened = False
-            print(index)
             if index == "m":
                 extkey = self.gen_masterpriv()
                 continue
@@ -47,8 +47,10 @@ class Bip32:
 
             extkey = extkey.derive_priv(childindex, is_hardened)
 
-        print(extkey.childnumber)
-        return extkey.serialize()
+        if not is_private:
+            extkey = extkey.neuter()
+
+        return extkey
 
 
 class ExtKey:
@@ -157,6 +159,9 @@ class ExtKey:
 
 
 if __name__ == '__main__':
-    seed = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
+    args = sys.argv
+    seed = bytes.fromhex(args[2])
     bip32 = Bip32(seed)
-    print(bip32.derive_from_path("m/0H/1/2H/2/1000000000"))
+    if args[3] == "public":
+        is_private = False
+    print(bip32.derive_from_path(args[1], is_private).serialize())
