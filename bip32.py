@@ -20,7 +20,7 @@ class Bip32:
 
     @classmethod
     def create_without_seed(network="mainnet"):
-        seed = random.getrandbits(256).to_bytes(int(32), "little")
+        seed = random.getrandbits(256).to_bytes(int(32), "big")
         return Bip32(seed, network)
 
     def gen_masterpriv(self):
@@ -31,6 +31,7 @@ class Bip32:
     def derive_from_path(self, path):
         indexes = path.split("/")
         for index in indexes:
+            is_hardened = False
             print(index)
             if index == "m":
                 extkey = self.gen_masterpriv()
@@ -41,8 +42,12 @@ class Bip32:
                 index = index[:-1]
 
             childindex = int(index, 10)
+            if is_hardened == True:
+                childindex += 2147483648
+
             extkey = extkey.derive_priv(childindex, is_hardened)
 
+        print(extkey.childnumber)
         return extkey.serialize()
 
 
@@ -104,22 +109,22 @@ class ExtKey:
         else:
             ba.extend(par_pub)
 
-        ba.extend(childindex.to_bytes(4, 'little'))
+        ba.extend(childindex.to_bytes(4, 'big'))
         I64 = hmac.HMAC(key=self.chaincode, msg=bytes(ba),
                         digestmod=hashlib.sha512).digest()
 
         n = int(
             "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
-        new_priv = (int.from_bytes(I64[:32], 'little') +
-                    int.from_bytes(self.keydata, 'little')) % n
-        new_priv = new_priv.to_bytes(32, 'little')
-        depth = int.from_bytes(self.depth, 'little') + 1
+        new_priv = (int.from_bytes(I64[:32], 'big') +
+                    int.from_bytes(self.keydata, 'big')) % n
+        new_priv = new_priv.to_bytes(32, 'big')
+        depth = int.from_bytes(self.depth, 'big') + 1
 
         new_fingerprint = hashlib.sha256(par_pub).digest()
         new_fingerprint = hashlib.new(
             "ripemd160", new_fingerprint).digest()[:4]
 
-        return ExtKey(self.network, depth.to_bytes(1, 'little'), new_fingerprint, childindex.to_bytes(4, 'little'), I64[32:], new_priv, True, is_hardened)
+        return ExtKey(self.network, depth.to_bytes(1, 'big'), new_fingerprint, childindex.to_bytes(4, 'big'), I64[32:], new_priv, True, is_hardened)
 
     def derive_pub(self, childindex: int, is_hardened):
         if self.is_private:
@@ -133,25 +138,25 @@ class ExtKey:
 
         ba = bytearray()
         ba.extend(self.keydata)
-        ba.extend(childindex.to_bytes(4, 'little'))
+        ba.extend(childindex.to_bytes(4, 'big'))
         I64 = hmac.HMAC(key=self.chaincode, msg=bytes(ba),
                         digestmod=hashlib.sha512).digest()
 
         n = int(
             "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
-        new_priv = (int.from_bytes(I64[:32], 'little') +
-                    int.from_bytes(self.keydata, 'little')) % n
-        new_priv = new_priv.to_bytes(32, 'little')
-        depth = int.from_bytes(self.depth, 'little') + 1
+        new_priv = (int.from_bytes(I64[:32], 'big') +
+                    int.from_bytes(self.keydata, 'big')) % n
+        new_priv = new_priv.to_bytes(32, 'big')
+        depth = int.from_bytes(self.depth, 'big') + 1
 
         new_fingerprint = hashlib.sha256(self.keydata).digest()
         new_fingerprint = hashlib.new(
             "ripemd160", new_fingerprint).digest()[:4]
 
-        return ExtKey(self.network, depth.to_bytes(1, 'little'), new_fingerprint, childindex.to_bytes(4, 'little'), I64[32:], new_priv, True, is_hardened)
+        return ExtKey(self.network, depth.to_bytes(1, 'big'), new_fingerprint, childindex.to_bytes(4, 'big'), I64[32:], new_priv, True, is_hardened)
 
 
 if __name__ == '__main__':
     seed = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
     bip32 = Bip32(seed)
-    print(bip32.derive_from_path("m/0H"))
+    print(bip32.derive_from_path("m/0H/1/2H/2/1000000000"))
