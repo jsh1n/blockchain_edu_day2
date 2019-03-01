@@ -7,10 +7,8 @@ import sys
 
 
 class Bip32:
-    def check_seed(self, seed):
+    def check_seed(self, seed: bytes):
         length = len(seed)
-        if not isinstance(seed, bytes):
-            raise TypeError("seed must be bytes")
         if length < 16 or 64 < length or length % 4 != 0:
             raise ValueError("specified seed size is not allowed")
         return seed
