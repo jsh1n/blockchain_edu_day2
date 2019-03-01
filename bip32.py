@@ -27,7 +27,7 @@ class Bip32:
     def gen_masterpriv(self):
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=self.seed,
                         digestmod=hashlib.sha512).digest()
-        return ExtKey(self.network, b"\x00", b"\x00\x00\x00\x00", b"\x00\x00\x00\x00", I64[32:], I64[:32], True, False)
+        return ExtKey(self.network, b"\x00", b"\x00\x00\x00\x00", b"\x00\x00\x00\x00", I64[32:], I64[:32], True)
 
     def derive_from_path(self, path, is_private=True):
         indexes = path.split("/")
@@ -54,7 +54,7 @@ class Bip32:
 
 
 class ExtKey:
-    def __init__(self, network: str, depth: bytes, fingerprint: bytes, childnumber: bytes, chaincode: bytes, keydata: bytes, is_private: bool, is_hardened: bool):
+    def __init__(self, network: str, depth: bytes, fingerprint: bytes, childnumber: bytes, chaincode: bytes, keydata: bytes, is_private: bool):
         version = None
         if is_private:
             if network == "mainnet":
@@ -77,7 +77,6 @@ class ExtKey:
         self.chaincode = chaincode
         self.keydata = keydata
         self.is_private = is_private
-        self.is_hardened = is_hardened
 
     def serialize(self):
         ret = bytearray()
@@ -98,7 +97,7 @@ class ExtKey:
 
         pubkeydata = PrivateKey(self.keydata, raw=True).pubkey.serialize()
 
-        return ExtKey(self.network, self.depth, self.fingerprint, self.childnumber, self.chaincode, pubkeydata, False, self.is_hardened)
+        return ExtKey(self.network, self.depth, self.fingerprint, self.childnumber, self.chaincode, pubkeydata, False)
 
     def derive_priv(self, childindex: int, is_hardened: bool):
         if not self.is_private:
@@ -126,9 +125,9 @@ class ExtKey:
         new_fingerprint = hashlib.new(
             "ripemd160", new_fingerprint).digest()[:4]
 
-        return ExtKey(self.network, depth.to_bytes(1, 'big'), new_fingerprint, childindex.to_bytes(4, 'big'), I64[32:], new_priv, True, is_hardened)
+        return ExtKey(self.network, depth.to_bytes(1, 'big'), new_fingerprint, childindex.to_bytes(4, 'big'), I64[32:], new_priv, True)
 
-    def derive_pub(self, childindex: int, is_hardened):
+    def derive_pub(self, childindex: int, is_hardened: bool):
         if self.is_private:
             return self.neuter().derive_pub_from_pub(childindex, is_hardened)
         else:
@@ -155,13 +154,14 @@ class ExtKey:
         new_fingerprint = hashlib.new(
             "ripemd160", new_fingerprint).digest()[:4]
 
-        return ExtKey(self.network, depth.to_bytes(1, 'big'), new_fingerprint, childindex.to_bytes(4, 'big'), I64[32:], new_priv, True, is_hardened)
+        return ExtKey(self.network, depth.to_bytes(1, 'big'), new_fingerprint, childindex.to_bytes(4, 'big'), I64[32:], new_priv, True)
 
 
 if __name__ == '__main__':
     args = sys.argv
     seed = bytes.fromhex(args[2])
     bip32 = Bip32(seed)
+    is_private = True
     if args[3] == "public":
         is_private = False
     print(bip32.derive_from_path(args[1], is_private).serialize())
