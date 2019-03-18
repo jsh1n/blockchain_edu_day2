@@ -60,6 +60,11 @@ class ExtKey:
                 version = bytes.fromhex("0488ADE4")
             elif network == "testnet":
                 version = bytes.fromhex("04358394")
+
+            keydata_int = int.from_bytes(keydata, 'big')
+            if keydata_int == 0 or keydata_int >= n:
+                ValueError("generated key is not valid")
+
         elif not is_private:
             if network == "mainnet":
                 version = bytes.fromhex("0488B21E")
@@ -67,10 +72,6 @@ class ExtKey:
                 version = bytes.fromhex("043587CF")
         if version is None:
             BaseException("cannot determine version")
-
-        keydata_int = int.from_bytes(keydata, 'big')
-        if keydata_int == 0 or keydata_int >= n:
-            ValueError("generated key is not valid")
 
         self.network = network
         self.version = version
