@@ -28,9 +28,6 @@ class Bip32:
     def gen_masterpriv(self):
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=self.seed,
                         digestmod=hashlib.sha512).digest()
-        Il = int.from_bytes(Il, 'big')
-        if Il == 0 or Il >= n:
-            ValueError("specified seed is not valid")
         return ExtKey(self.network, b"\x00", b"\x00\x00\x00\x00", b"\x00\x00\x00\x00", I64[32:], I64[:32], True)
 
     def derive_from_path(self, path, is_private=True):
@@ -72,6 +69,10 @@ class ExtKey:
                 version = bytes.fromhex("043587CF")
         if version is None:
             BaseException("cannot determine version")
+
+        keydata_int = int.from_bytes(keydata, 'big')
+        if keydata_int == 0 or keydata_int >= n:
+            ValueError("generated key is not valid")
 
         self.network = network
         self.version = version
