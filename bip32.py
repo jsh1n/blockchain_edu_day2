@@ -10,13 +10,11 @@ n = int(
 
 
 class Bip32:
-    def check_seed(self, seed: bytes):
+    def __init__(self, seed, network="mainnet"):
         length = len(seed)
         if length < 16 or 64 < length or length % 4 != 0:
             raise ValueError("specified seed size is not allowed")
-        return seed
 
-    def __init__(self, seed, network="mainnet"):
         self.seed = seed
         self.network = network
 
