@@ -144,8 +144,6 @@ class ExtKey:
         I64 = hmac.HMAC(key=self.chaincode, msg=bytes(ba),
                         digestmod=hashlib.sha512).digest()
 
-        n = int(
-            "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
         new_priv = (int.from_bytes(I64[:32], 'big') +
                     int.from_bytes(self.keydata, 'big')) % n
         new_priv = new_priv.to_bytes(32, 'big')
