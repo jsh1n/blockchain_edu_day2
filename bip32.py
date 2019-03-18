@@ -5,6 +5,9 @@ import base58
 from secp256k1 import PrivateKey
 import sys
 
+n = int(
+    "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
+
 
 class Bip32:
     def check_seed(self, seed: bytes):
@@ -25,6 +28,9 @@ class Bip32:
     def gen_masterpriv(self):
         I64 = hmac.HMAC(key=b"Bitcoin seed", msg=self.seed,
                         digestmod=hashlib.sha512).digest()
+        Il = int.from_bytes(Il, 'big')
+        if Il == 0 or Il >= n:
+            ValueError("specified seed is not valid")
         return ExtKey(self.network, b"\x00", b"\x00\x00\x00\x00", b"\x00\x00\x00\x00", I64[32:], I64[:32], True)
 
     def derive_from_path(self, path, is_private=True):
@@ -112,8 +118,6 @@ class ExtKey:
         I64 = hmac.HMAC(key=self.chaincode, msg=bytes(ba),
                         digestmod=hashlib.sha512).digest()
 
-        n = int(
-            "0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
         new_priv = (int.from_bytes(I64[:32], 'big') +
                     int.from_bytes(self.keydata, 'big')) % n
         new_priv = new_priv.to_bytes(32, 'big')
