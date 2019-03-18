@@ -12,7 +12,7 @@ n = int(
 class Bip32:
     def __init__(self, seed, network="mainnet"):
         length = len(seed)
-        if length < 16 or 64 < length or length % 4 != 0:
+        if length < 16 or 64 < length:
             raise ValueError("specified seed size is not allowed")
 
         self.seed = seed
